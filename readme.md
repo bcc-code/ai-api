@@ -9,6 +9,13 @@ In addition it exposes some monitoring parameters so it can be supervised.
 There is currently no support for uploading files so the files have to be locally available. Neither does it have any sort of 
 keys or login as that is currently not needed in the environment.
 
+## Building
+
+You will need at least Go 1.19, can be obtained from https://go.dev/
+Then run `make build` to build for your architecture or `make build-linux-amd64` to build for linux/amd64 combo.
+
+This will produce a `whisper-api` in the current directory.
+
 ## Known bugs/areas for improvement
 
 * If it crashes or gets restarted the queue is lost
