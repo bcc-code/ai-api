@@ -21,6 +21,7 @@ type Job struct {
 	Callback     string `json:"callback"`
 	Model        string `json:"model"`
 	Duration     string `json:"duration"`
+	Priority     int    `json:"priority"`
 }
 
 type handlers struct {
@@ -55,6 +56,11 @@ func (h *handlers) SubmitJob(c *gin.Context) {
 	job.ID = uuid.New().String()
 	job.Status = JobStatusQueued
 
+	if job.Priority <= 0 {
+		// This is the default value. We want the default to be 1000 now so the jobs get appended to the front of the queue.
+		job.Priority = 1000
+	}
+
 	if job.OutputFormat == "" {
 		job.OutputPath = "txt"
 	}
@@ -63,12 +69,18 @@ func (h *handlers) SubmitJob(c *gin.Context) {
 		job.Model = "large-v2"
 	}
 
-	h.queuedJobs = append(h.queuedJobs, job)
+	if job.Priority >= 500 {
+		// High prio. Put in the front
+		h.queuedJobs = append([]*Job{job}, h.queuedJobs...)
+	} else {
+		// Low prio, put in the back
+		h.queuedJobs = append(h.queuedJobs, job)
+	}
 
 	// Attempt to send. If buffer is full, ignore
 	select {
 	case h.queueChan <- true:
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(50 * time.Millisecond):
 	}
 
 	c.JSON(http.StatusAccepted, job)

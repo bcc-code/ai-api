@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -12,9 +13,39 @@ import (
 	"github.com/bcc-code/mediabank-bridge/log"
 )
 
+func doCallback(job *Job) {
+	if job.Callback != "" {
+		log.L.Info().Str("callback", job.Callback).Msg("Doing callback")
+		jobJson, err := json.Marshal(job)
+		if err != nil {
+			log.L.Error().Err(err).Msg("Failed to execute callback")
+		}
+
+		r, err := http.NewRequest("POST", job.Callback, strings.NewReader(string(jobJson)))
+		if err != nil {
+			log.L.Error().Err(err).Msg("Failed to execute callback")
+		}
+
+		_, err = httpClient.Do(r)
+		if err != nil {
+			log.L.Error().Err(err).Msg("Failed to execute callback")
+		}
+	}
+}
+
 func runJob(job *Job) {
 	log.L.Info().Str("path", job.Path).Msg("Processing started")
 	job.Status = JobStatusRunning
+
+	if os.Getenv("DO_NOT_ACTUALLY_RUN_COMMAND") == "true" {
+		log.L.Warn().Msg("FAKE RUNNING COMMAND")
+		// Simulate some work
+		time.Sleep(time.Second * 10)
+		job.Duration = fmt.Sprintf("duration: %s", time.Second*10)
+		job.Status = JobStatusCompleted
+		doCallback(job)
+		return
+	}
 
 	cmd := exec.Command("whisper",
 		"--task", "transcribe",
@@ -24,7 +55,6 @@ func runJob(job *Job) {
 		"--language", job.Language,
 		job.Path,
 	)
-	//cmd := exec.Command("/bin/bash", "-c", "sleep 30")
 
 	stderr, _ := cmd.StderrPipe()
 	stdout, _ := cmd.StdoutPipe()
@@ -67,21 +97,5 @@ func runJob(job *Job) {
 
 	job.Status = JobStatusCompleted
 	log.L.Info().Str("path", job.Path).Msg("Processing completed")
-
-	if job.Callback != "" {
-		jobJson, err := json.Marshal(job)
-		if err != nil {
-			log.L.Error().Err(err).Msg("Failed to execute callback")
-		}
-
-		r, err := http.NewRequest("POST", job.Callback, strings.NewReader(string(jobJson)))
-		if err != nil {
-			log.L.Error().Err(err).Msg("Failed to execute callback")
-		}
-
-		_, err = httpClient.Do(r)
-		if err != nil {
-			log.L.Error().Err(err).Msg("Failed to execute callback")
-		}
-	}
+	doCallback(job)
 }

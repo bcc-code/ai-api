@@ -17,7 +17,8 @@ Create a new Job
 	"format": "vtt", // Optional, see below    
 	"callback": "http://url.to.hit.on.complete/", // Optional    
 	"output_path": "/lajksd/lasjd/", // MUST BE A FOLDER!    
-	"model": "tiny"
+	"model": "tiny",
+	"priority": 123
 }
 ```
 
@@ -28,6 +29,8 @@ Create a new Job
 *format*: txt,vtt,srt,tsv,json,all Default: txt
 
 *Model*: tiny.en,tiny,base.en,base,small.en,small,medium.en,medium,large-v1,large-v2,large Default: large-v2
+
+*Priority*: integer, Values [1 - 499] are low priority (appended at the back of the queue), and [500-9999] are high priority and are prepended to the beginning of the queue (i.e. will be run next). Anything outside defaults to 1000 (high). This value is a number so we can later introduce more nuanced priority system if wanted
 
 ### Callback
 
