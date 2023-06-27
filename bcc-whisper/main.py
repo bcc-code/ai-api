@@ -1,20 +1,24 @@
 import whisper
-from song_or_not import AudioClassifier
-import song_or_not
+from song_or_not.classifier import AudioClassifier
+from song_or_not.inference import inference
 import torch
 import sys
+import ssl
+import math
 
-SAMPLE_RATE = 44100
+ssl._create_default_https_context = ssl._create_unverified_context
+
+SAMPLE_RATE = 16000
 LENGTH = 5  # seconds
 SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
-FILE = "/Users/matjaz/meeting.wav"
+FILE = "/Users/fredrikvedvik/Desktop/fkaare.wav"
 
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = torch.load("song_or_not/songornot_5s.pt", map_location=torch.device(device))
     model.eval()
-    res = song_or_not.inference2(model, FILE, device, SAMPLE_RATE, SAMPLES_PER_CHUNK)
+    res = inference(model, FILE, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
     res2 = []
 
     current_type = "song"
@@ -40,8 +44,12 @@ def main():
 
     print(res2)
 
-    audio = whisper.audio.load_audio("/Users/matjaz/meeting.wav", SAMPLE_RATE)
-    t = whisper.load_model("medium").transcribe(audio=audio[15*60*SAMPLE_RATE:17*60*SAMPLE_RATE], language="no", verbose=True)
+    audio = whisper.load_audio(FILE, SAMPLE_RATE)
+
+    fromIndex = math.floor(0.33*60*SAMPLE_RATE)
+    toIndex = math.floor(3*60*SAMPLE_RATE)
+
+    t = whisper.load_model("medium").transcribe(audio=audio[fromIndex:toIndex], language="no", verbose=True)
     print(t)
 
 
