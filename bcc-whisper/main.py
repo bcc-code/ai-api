@@ -1,4 +1,4 @@
-import whisper, torch, ssl, math, json
+import whisper, torch, ssl, math, json, os
 from song_or_not.classifier import AudioClassifier
 from song_or_not.inference import inference
 
@@ -13,7 +13,17 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = torch.load("song_or_not/songornot_5s.pt", map_location=torch.device(device))
     model.eval()
-    res = inference(model, FILE, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
+
+    os.makedirs("out", exist_ok=True)
+
+    files = os.listdir("files")
+
+    for file in files:
+        if file.endswith(".wav"):
+            transcribeFile(model, device, "files/" + file)
+
+def transcribeFile(model, device: torch.device, file: str):
+    res = inference(model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
     res2 = []
 
     current_type = "song"
@@ -28,6 +38,7 @@ def main():
         if d <= 2 or current_type == x[0]:
             end += d
         else:
+            print(x)
             if current_type == "speech":
                 res2.append((current_type, start*LENGTH, end*LENGTH))
             start = end
@@ -37,7 +48,7 @@ def main():
     if current_type == "speech":
         res2.append((current_type, start*LENGTH, end*LENGTH))
 
-    # print(res2)
+    print(res2)
 
     audio = whisper.load_audio(FILE, SAMPLE_RATE)
 
@@ -48,7 +59,6 @@ def main():
         toIndex = math.floor(r[2]*SAMPLE_RATE)
 
         result = whisper.load_model("medium").transcribe(audio=audio[fromIndex:toIndex], language="no", verbose=True)
-        print(result["text"])
 
         lines = []
         for segment in result["segments"]:
@@ -64,16 +74,9 @@ def main():
             "transcription": lines,
         })
 
-    f = open("out/test.json", "w")
+    f = open("out/" + str.split(file, "/").pop() + ".json", "w")
     f.write(json.dumps(parts))
     f.close()
-
-    # fromIndex = math.floor(0.33*60*SAMPLE_RATE)
-    # toIndex = math.floor(3*60*SAMPLE_RATE)
-
-    # t = whisper.load_model("medium").transcribe(audio=audio[fromIndex:toIndex], language="no", verbose=True)
-    # print(t)
-
 
 if __name__ == "__main__":
     main()
