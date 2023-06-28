@@ -50,7 +50,7 @@ def transcribeFile(model, device: torch.device, file: str):
 
     print(res2)
 
-    audio = whisper.load_audio(FILE, SAMPLE_RATE)
+    audio = whisper.load_audio(file, SAMPLE_RATE)
 
     parts = []
 
