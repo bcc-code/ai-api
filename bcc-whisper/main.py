@@ -6,6 +6,7 @@ import sys
 
 import torch
 import whisper
+import argparse
 
 from song_or_not.classifier import AudioClassifier
 from song_or_not.inference import inference, load_model
@@ -17,31 +18,29 @@ LENGTH = 5  # seconds
 SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
 
 
-def main():
-    # import for side-effects
-    _ = AudioClassifier
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-o", "--output", help="output file")
+    parser.add_argument("-l", "--language", help="language", default="no")
+    parser.add_argument("src", help="source file")
 
+    return parser.parse_args()
+
+
+def main():
+    # import for side effects
+    _ = AudioClassifier
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    print("Loading model")
     model = load_model(device)
     model.eval()
 
-    os.makedirs("out", exist_ok=True)
-
-    arguments = sys.argv
-
-    # transcribe specific file
-    if len(arguments) > 1:
-        file = arguments[1]
-        out = arguments[2]
-        if file.endswith(".wav"):
-            transcribe_file(model, device, file, out, "no")
-    else:
-        files = os.listdir("files")
-
-        for file in files:
-            if file.endswith(".wav"):
-                transcribe_file(model, device, "files/" + file, "out/" + str.split(file, "/").pop() + ".json", "no")
+    config = vars(parse_arguments())
+    file = config["src"]
+    out = config["output"]
+    language = config["language"]
+    transcribe_file(model, device, file, out, language)
 
 
 def transcribe_file(model, device: torch.device, file: str, out: str, language: str):

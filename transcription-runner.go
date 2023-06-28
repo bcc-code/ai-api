@@ -47,37 +47,40 @@ func runJob(job *Job) {
 		return
 	}
 
-	cmd := exec.Command("whisper",
-		"--task", "transcribe",
-		"--model", "large-v2",
-		"--output_format", job.OutputFormat,
-		"--output_dir", job.OutputPath,
-		"--language", job.Language,
-		job.Path,
-	)
+	//cmd := exec.Command("whisper",
+	//	"--task", "transcribe",
+	//	"--model", "large-v2",
+	//	"--output_format", job.OutputFormat,
+	//	"--output_dir", job.OutputPath,
+	//	"--language", job.Language,
+	//	job.Path,
+	//)
+
+	cmd := exec.Command("python3", "bcc-whisper/main.py", "-o", job.OutputPath, "-l", job.Language, job.Path)
 
 	stderr, _ := cmd.StderrPipe()
 	stdout, _ := cmd.StdoutPipe()
 
 	start := time.Now()
-	cmd.Start()
+	_ = cmd.Start()
 
 	go func() {
 		scanner := bufio.NewScanner(stderr)
-		scanner.Split(bufio.ScanWords)
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			m := scanner.Text()
+			fmt.Print(m)
+		}
+	}()
+
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		scanner.Split(bufio.ScanLines)
 		for scanner.Scan() {
 			m := scanner.Text()
 			fmt.Println(m)
 		}
 	}()
-
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		m := scanner.Text()
-		job.Result += fmt.Sprintf("%s\n", m)
-		fmt.Println(m)
-	}
 
 	err := cmd.Wait()
 	end := time.Now()
