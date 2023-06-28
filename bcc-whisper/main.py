@@ -7,7 +7,6 @@ ssl._create_default_https_context = ssl._create_unverified_context
 SAMPLE_RATE = 16000
 LENGTH = 5  # seconds
 SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
-FILE = "/Users/fredrikvedvik/Desktop/fkaare.wav"
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
