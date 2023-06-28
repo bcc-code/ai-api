@@ -2,9 +2,10 @@ import json
 import math
 import os
 import ssl
+import sys
+
 import torch
 import whisper
-import sys
 
 from song_or_not.classifier import AudioClassifier
 from song_or_not.inference import inference, load_model
@@ -17,6 +18,9 @@ SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
 
 
 def main():
+    # import for side-effects
+    _ = AudioClassifier
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = load_model(device)
@@ -31,16 +35,16 @@ def main():
         file = arguments[1]
         out = arguments[2]
         if file.endswith(".wav"):
-            transcribe_file(model, device, file, out)
+            transcribe_file(model, device, file, out, "no")
     else:
         files = os.listdir("files")
 
         for file in files:
             if file.endswith(".wav"):
-                transcribe_file(model, device, "files/" + file, "out/" + str.split(file, "/").pop() + ".json")
+                transcribe_file(model, device, "files/" + file, "out/" + str.split(file, "/").pop() + ".json", "no")
 
 
-def transcribe_file(model, device: torch.device, file: str, out: str):
+def transcribe_file(model, device: torch.device, file: str, out: str, language: str):
     res = inference(model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
 
     current_type = "song"
@@ -67,27 +71,28 @@ def transcribe_file(model, device: torch.device, file: str, out: str):
 
     audio = whisper.load_audio(file, SAMPLE_RATE)
 
-    parts = []
+    parts = {
+        "text": "",
+        "segments": [],
+        "language": language,
+    }
 
     for r in res2:
         from_index = math.floor(r[1] * SAMPLE_RATE)
         to_index = math.floor(r[2] * SAMPLE_RATE)
 
-        result = whisper.load_model("medium").transcribe(audio=audio[from_index:to_index], verbose=True)
+        result = whisper.load_model("medium").transcribe(audio=audio[from_index:to_index], verbose=True,
+                                                         language=language)
 
-        lines = []
+        if parts["text"] != "":
+            parts["text"] += "\n\n"
+
+        parts["text"] += result["text"]
+
         for segment in result["segments"]:
-            lines.append({
-                "start": segment["start"],  # type: ignore
-                "end": segment["end"],  # type: ignore
-                "text": segment["text"]  # type: ignore
-            })
-
-        parts.append({
-            "start": r[1],
-            "end": r[2],
-            "transcription": lines,
-        })
+            segment["start"] += r[1]
+            segment["end"] += r[1]
+            parts["segments"].append(segment)
 
     f = open(out, "w")
     f.write(json.dumps(parts))
