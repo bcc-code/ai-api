@@ -1,12 +1,9 @@
+import argparse
 import json
 import math
-import os
 import ssl
-import sys
-
 import torch
 import whisper
-import argparse
 
 from song_or_not.classifier import AudioClassifier
 from song_or_not.inference import inference, load_model
@@ -20,9 +17,10 @@ SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-o", "--output", help="output file")
     parser.add_argument("-l", "--language", help="language", default="no")
+    parser.add_argument("-m", "--model", help="whisper model to use", default="medium")
     parser.add_argument("src", help="source file")
+    parser.add_argument("output", help="output file")
 
     return parser.parse_args()
 
@@ -32,19 +30,18 @@ def main():
     _ = AudioClassifier
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    print("Loading model")
-    model = load_model(device)
-    model.eval()
-
     config = vars(parse_arguments())
     file = config["src"]
     out = config["output"]
     language = config["language"]
-    transcribe_file(model, device, file, out, language)
+    model = config["model"]
+    transcribe_file(device, file, out, language, model)
 
 
-def transcribe_file(model, device: torch.device, file: str, out: str, language: str):
-    res = inference(model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
+def transcribe_file(device: torch.device, file: str, out: str, language: str, model: str):
+    detection_model = load_model(device)
+    detection_model.eval()
+    res = inference(detection_model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
 
     current_type = "song"
     start = 0
@@ -80,8 +77,10 @@ def transcribe_file(model, device: torch.device, file: str, out: str, language: 
         from_index = math.floor(r[1] * SAMPLE_RATE)
         to_index = math.floor(r[2] * SAMPLE_RATE)
 
-        result = whisper.load_model("medium").transcribe(audio=audio[from_index:to_index], verbose=True,
-                                                         language=language)
+        result = whisper.load_model(model) \
+            .transcribe(audio=audio[from_index:to_index],
+                        verbose=True,
+                        language=language)
 
         if parts["text"] != "":
             parts["text"] += "\n\n"

@@ -56,7 +56,7 @@ func runJob(job *Job) {
 	//	job.Path,
 	//)
 
-	cmd := exec.Command("python3", "bcc-whisper/main.py", "-o", job.OutputPath, "-l", job.Language, job.Path)
+	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", "large-v2", job.Path, job.OutputPath)
 
 	cmd.Env = append(os.Environ(), "PYTHONUNBUFFERED=1")
 
@@ -64,6 +64,7 @@ func runJob(job *Job) {
 	stdout, _ := cmd.StdoutPipe()
 
 	start := time.Now()
+
 	_ = cmd.Start()
 
 	go func() {
