@@ -1,9 +1,7 @@
+import argparse
 import json
 import math
-import os
 import ssl
-import sys
-
 import torch
 import whisper
 
@@ -17,35 +15,33 @@ LENGTH = 5  # seconds
 SAMPLES_PER_CHUNK = SAMPLE_RATE * LENGTH
 
 
-def main():
-    # import for side-effects
-    _ = AudioClassifier
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-l", "--language", help="language", default="no")
+    parser.add_argument("-m", "--model", help="whisper model to use", default="medium")
+    parser.add_argument("src", help="source file")
+    parser.add_argument("output", help="output file")
 
+    return parser.parse_args()
+
+
+def main():
+    # import for side effects
+    _ = AudioClassifier
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = load_model(device)
-    model.eval()
-
-    os.makedirs("out", exist_ok=True)
-
-    arguments = sys.argv
-
-    # transcribe specific file
-    if len(arguments) > 1:
-        file = arguments[1]
-        out = arguments[2]
-        if file.endswith(".wav"):
-            transcribe_file(model, device, file, out, "no")
-    else:
-        files = os.listdir("files")
-
-        for file in files:
-            if file.endswith(".wav"):
-                transcribe_file(model, device, "files/" + file, "out/" + str.split(file, "/").pop() + ".json", "no")
+    config = vars(parse_arguments())
+    file = config["src"]
+    out = config["output"]
+    language = config["language"]
+    model = config["model"]
+    transcribe_file(device, file, out, language, model)
 
 
-def transcribe_file(model, device: torch.device, file: str, out: str, language: str):
-    res = inference(model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
+def transcribe_file(device: torch.device, file: str, out: str, language: str, model: str):
+    detection_model = load_model(device)
+    detection_model.eval()
+    res = inference(detection_model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
 
     current_type = "song"
     start = 0
@@ -81,8 +77,10 @@ def transcribe_file(model, device: torch.device, file: str, out: str, language: 
         from_index = math.floor(r[1] * SAMPLE_RATE)
         to_index = math.floor(r[2] * SAMPLE_RATE)
 
-        result = whisper.load_model("medium").transcribe(audio=audio[from_index:to_index], verbose=True,
-                                                         language=language)
+        result = whisper.load_model(model) \
+            .transcribe(audio=audio[from_index:to_index],
+                        verbose=True,
+                        language=language)
 
         if parts["text"] != "":
             parts["text"] += "\n\n"
