@@ -5,8 +5,7 @@ import ssl
 import torch
 import whisper
 
-from song_or_not.classifier import AudioClassifier
-from song_or_not.inference import inference, load_model
+from inference import load_model, inference, AudioClassifier
 
 ssl._create_default_https_context = ssl._create_unverified_context
 

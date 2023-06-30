@@ -1,3 +1,0 @@
-[submodule "bcc-whisper/song_or_not"]
-	path = bcc-whisper/song_or_not
-	url = https://github.com/bcc-code/bccmedia-song-or-not.git
