@@ -47,17 +47,7 @@ func runJob(job *Job) {
 		return
 	}
 
-	//cmd := exec.Command("whisper",
-	//	"--task", "transcribe",
-	//	"--model", "large-v2",
-	//	"--output_format", job.OutputFormat,
-	//	"--output_dir", job.OutputPath,
-	//	"--language", job.Language,
-	//	job.Path,
-	//)
-
 	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", "large-v2", job.Path, job.OutputPath)
-
 	cmd.Env = append(os.Environ(), "PYTHONUNBUFFERED=1")
 
 	stderr, _ := cmd.StderrPipe()
@@ -78,7 +68,9 @@ func runJob(job *Job) {
 	scanner := bufio.NewScanner(stdout)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		line := scanner.Text()
+		job.Result += fmt.Sprintf("%s\n", line)
+		fmt.Println(line)
 	}
 
 	err := cmd.Wait()
