@@ -5,6 +5,7 @@ import ssl
 import torch
 import whisper
 import os
+import datetime
 
 from inference import load_model, inference, AudioClassifier
 
@@ -47,8 +48,6 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
     start = 0
     end = 0
 
-    out_file = out.rstrip("/") + "/" + os.path.basename(file) + ".json"
-    print("OUTPUTS: " + out_file)
 
     res2: list[tuple[str, int, int]] = []
 
@@ -95,9 +94,57 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
             segment["end"] += r[1]
             parts["segments"].append(segment)
 
-    f = open(out_file, "w")
+    out_file = out.rstrip("/") + "/" + os.path.basename(file)
+    f = open(out_file + ".json", "w")
     f.write(json.dumps(parts))
     f.close()
+
+    f = open(out_file + ".vtt", "w")
+    f.write(to_web_vtt(parts["segments"]))
+    f.close()
+
+    f = open(out_file + ".txt", "w")
+    f.write(to_txt(parts["segments"]))
+    f.close()
+
+
+def convert_seconds_to_timestamp(seconds):
+    # Convert seconds to a timedelta object
+    delta = datetime.timedelta(seconds=seconds)
+
+    # Create a datetime object with an arbitrary date
+    arbitrary_date = datetime.datetime(1, 1, 1)
+
+    # Add the timedelta to the arbitrary date
+    result = arbitrary_date + delta
+
+    # Format the resulting time as a string in the desired format
+    timestamp = result.strftime("%H:%M:%S.%f")[:-3]  # Exclude the last 3 digits for milliseconds
+
+    return timestamp
+
+
+def to_web_vtt(segments: []):
+    text = "WEBVTT\n\n"
+
+    for segment in segments:
+        text += convert_seconds_to_timestamp(segment["start"])
+        text += " --> "
+        text += convert_seconds_to_timestamp(segment["end"])
+        text += "\n"
+        text += str(segment["text"]).strip()
+        text += "\n\n"
+
+    return text
+
+
+def to_txt(segments: []):
+    text = ""
+
+    for segment in segments:
+        text += str(segment["text"]).strip() + "\n"
+
+    return text
 
 
 if __name__ == "__main__":
