@@ -47,6 +47,9 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
     start = 0
     end = 0
 
+    out_file = out.rstrip("/") + "/" + os.path.basename(file) + ".json"
+    print("OUTPUTS: " + out_file)
+
     res2: list[tuple[str, int, int]] = []
 
     for x in res:
@@ -92,7 +95,7 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
             segment["end"] += r[1]
             parts["segments"].append(segment)
 
-    f = open(out.rstrip("/") + os.path.basename(file) + ".json", "w")
+    f = open(out_file, "w")
     f.write(json.dumps(parts))
     f.close()
 
