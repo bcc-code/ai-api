@@ -2,7 +2,15 @@ run:
 	go run .
 
 build:
-	go build .
+	rm -r ./build
+	go build -o build/bin .
+	mkdir ./build/bcc-whisper
+	cp ./bcc-whisper/*.py ./build/bcc-whisper/
+	cp ./bcc-whisper/*.txt ./build/bcc-whisper/
 
 build-linux-amd64:
-	GOOS=linux GOARCH=amd64 go build .
+	rm -r ./build
+	GOOS=linux GOARCH=amd64 go build -o build/bin .
+	mkdir ./build/bcc-whisper
+	cp ./bcc-whisper/*.py ./build/bcc-whisper/
+	cp ./bcc-whisper/*.txt ./build/bcc-whisper/

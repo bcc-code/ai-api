@@ -4,6 +4,7 @@ import math
 import ssl
 import torch
 import whisper
+import os
 
 from inference import load_model, inference, AudioClassifier
 
@@ -91,7 +92,7 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
             segment["end"] += r[1]
             parts["segments"].append(segment)
 
-    f = open(out, "w")
+    f = open(out.rstrip("/") + os.path.basename(file) + ".json", "w")
     f.write(json.dumps(parts))
     f.close()
 
