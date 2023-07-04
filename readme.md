@@ -23,3 +23,6 @@ This will produce a `whisper-api` in the current directory.
 * Output is very "slow", as in the cmd caches a lot of output before it is dumped to stdout. If this could be tricked into dumping more often, then the progress would be made more obvious.
 * 10 000 other things
 
+## Deployment
+
+Build the directory for deployment on linux with `make build-linux-amd64` and copy the resulting directory to the server. At the moment this is deployed on `ai-api:/api/` (executable at `/api/bin`)
