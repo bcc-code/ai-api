@@ -103,12 +103,16 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
     f.write(to_web_vtt(parts["segments"]))
     f.close()
 
+    f = open(out_file + ".srt", "w")
+    f.write(to_srt(parts["segments"]))
+    f.close()
+
     f = open(out_file + ".txt", "w")
     f.write(to_txt(parts["segments"]))
     f.close()
 
 
-def convert_seconds_to_timestamp(seconds):
+def convert_seconds_to_vtt_timestamp(seconds):
     # Convert seconds to a timedelta object
     delta = datetime.timedelta(seconds=seconds)
 
@@ -124,18 +128,50 @@ def convert_seconds_to_timestamp(seconds):
     return timestamp
 
 
+def convert_seconds_to_srt_timestamp(seconds):
+    # Convert seconds to a timedelta object
+    delta = datetime.timedelta(seconds=seconds)
+
+    # Create a datetime object with an arbitrary date
+    arbitrary_date = datetime.datetime(1, 1, 1)
+
+    # Add the timedelta to the arbitrary date
+    result = arbitrary_date + delta
+
+    # Format the resulting time as a string in the desired format
+    timestamp = result.strftime("%H:%M:%S,%f")[:-3]  # Exclude the last 3 digits for milliseconds
+
+    return timestamp
+
+
 def to_web_vtt(segments: []):
     text = "WEBVTT\n\n"
 
     for segment in segments:
-        text += convert_seconds_to_timestamp(segment["start"])
+        text += convert_seconds_to_vtt_timestamp(segment["start"])
         text += " --> "
-        text += convert_seconds_to_timestamp(segment["end"])
+        text += convert_seconds_to_vtt_timestamp(segment["end"])
         text += "\n"
         text += str(segment["text"]).strip()
         text += "\n\n"
 
     return text
+
+
+def to_srt(segments: []):
+    text = ""
+
+    for index, segment in enumerate(segments):
+        text += str(index) + "\n"
+        text += convert_seconds_to_srt_timestamp(segment["start"])
+        text += " --> "
+        text += convert_seconds_to_srt_timestamp(segment["end"])
+        text += "\n"
+        text += str(segment["text"]).strip()
+        text += "\n\n"
+
+    return text
+
 
 
 def to_txt(segments: []):
