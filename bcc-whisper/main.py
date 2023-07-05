@@ -162,7 +162,7 @@ def to_srt(segments: []):
     text = ""
 
     for index, segment in enumerate(segments):
-        text += str(index) + "\n"
+        text += str(index + 1) + "\n"
         text += convert_seconds_to_srt_timestamp(segment["start"])
         text += " --> "
         text += convert_seconds_to_srt_timestamp(segment["end"])
@@ -171,7 +171,6 @@ def to_srt(segments: []):
         text += "\n\n"
 
     return text
-
 
 
 def to_txt(segments: []):
