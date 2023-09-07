@@ -1,4 +1,4 @@
-module github.com/bcc-code/whisper-api
+module github.com/bcc-code/ai-api
 
 go 1.19
 
