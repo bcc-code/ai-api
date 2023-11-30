@@ -1,4 +1,5 @@
 git+https://github.com/bcc-code/bccmedia-song-or-not.git
 git+https://github.com/openai/whisper.git
+git+https://github.com/linto-ai/whisper-timestamped
 torch
 torchaudio

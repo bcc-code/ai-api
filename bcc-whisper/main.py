@@ -3,12 +3,13 @@ import json
 import math
 import ssl
 import torch
-import whisper
+import whisper_timestamped as whisper
 import os
 import datetime
 
 from inference import load_model, inference, AudioClassifier
 
+# noinspection PyProtectedMember
 ssl._create_default_https_context = ssl._create_unverified_context
 
 SAMPLE_RATE = 16000
@@ -48,7 +49,6 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
     start = 0
     end = 0
 
-
     res2: list[tuple[str, int, int]] = []
 
     for x in res:
@@ -79,10 +79,9 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
         from_index = math.floor(r[1] * SAMPLE_RATE)
         to_index = math.floor(r[2] * SAMPLE_RATE)
 
-        result = whisper.load_model(model) \
-            .transcribe(audio=audio[from_index:to_index],
-                        verbose=True,
-                        language=language)
+        result = whisper.transcribe(whisper.load_model(model), audio=audio[from_index:to_index],
+                                    verbose=True,
+                                    language=language)
 
         if parts["text"] != "":
             parts["text"] += "\n\n"
@@ -92,6 +91,9 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
         for segment in result["segments"]:
             segment["start"] += r[1]
             segment["end"] += r[1]
+            for word in segment["words"]:
+                word["start"] += r[1]
+                word["end"] += r[1]
             parts["segments"].append(segment)
 
     out_file = out.rstrip("/") + "/" + os.path.basename(file)
@@ -105,6 +107,10 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
 
     f = open(out_file + ".srt", "w")
     f.write(to_srt(parts["segments"]))
+    f.close()
+
+    f = open(out_file + ".words.srt", "w")
+    f.write(to_srt(parts["segments"], True))
     f.close()
 
     f = open(out_file + ".txt", "w")
@@ -158,10 +164,21 @@ def to_web_vtt(segments: []):
     return text
 
 
-def to_srt(segments: []):
+def to_srt(segments: [], words: bool = False):
     text = ""
 
     for index, segment in enumerate(segments):
+        if words:
+            for word in segment["words"]:
+                text += str(index + 1) + "\n"
+                text += convert_seconds_to_srt_timestamp(word["start"])
+                text += " --> "
+                text += convert_seconds_to_srt_timestamp(word["end"])
+                text += "\n"
+                text += str(word["text"]).strip()
+                text += "\n\n"
+            continue
+
         text += str(index + 1) + "\n"
         text += convert_seconds_to_srt_timestamp(segment["start"])
         text += " --> "
