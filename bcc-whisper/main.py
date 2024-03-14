@@ -46,6 +46,8 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
     res = inference(detection_model, file, device, SAMPLE_RATE, SAMPLES_PER_CHUNK, LENGTH)
 
     current_type = "song"
+
+    # start and end are in chunks / segments. So timestamp is start * LENGTH and end * LENGTH
     start = 0
     end = 0
 
