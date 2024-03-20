@@ -85,8 +85,8 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
 
         if language == "" or language == "auto":
             # detect the spoken language
-            mel = whisper.log_mel_spectrogram(whisper.pad_or_trim(audio[from_index:to_index])
-                                              .to(loaded_model.device))
+            mel = (whisper.log_mel_spectrogram(whisper.pad_or_trim(audio[from_index:to_index]))
+                   .to(loaded_model.device))
             _, probs = loaded_model.detect_language(mel)
             current_language = max(probs, key=probs.get)
             print(f"Detected language: {current_language}")
