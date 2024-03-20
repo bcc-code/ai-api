@@ -39,7 +39,6 @@ def main():
     model = config["model"]
     transcribe_file(device, file, out, language, model)
 
-
 def transcribe_file(device: torch.device, file: str, out: str, language: str, model: str):
     detection_model = load_model(device)
     detection_model.eval()
@@ -77,13 +76,24 @@ def transcribe_file(device: torch.device, file: str, out: str, language: str, mo
         "language": language,
     }
 
+    loaded_model = whisper.load_model(model)
+
+    current_language = language
     for r in res2:
         from_index = math.floor(r[1] * SAMPLE_RATE)
         to_index = math.floor(r[2] * SAMPLE_RATE)
 
-        result = whisper.transcribe(whisper.load_model(model), audio=audio[from_index:to_index],
+        if language == "" or language == "auto":
+            # detect the spoken language
+            mel = whisper.log_mel_spectrogram(whisper.pad_or_trim(audio[from_index:to_index])
+                                              .to(loaded_model.device))
+            _, probs = loaded_model.detect_language(mel)
+            current_language = max(probs, key=probs.get)
+            print(f"Detected language: {current_language}")
+
+        result = whisper.transcribe(loaded_model, audio=audio[from_index:to_index],
                                     verbose=True,
-                                    language=language)
+                                    language=current_language)
 
         if parts["text"] != "":
             parts["text"] += "\n\n"
