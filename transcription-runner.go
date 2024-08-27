@@ -47,7 +47,7 @@ func runJob(job *Job) {
 		return
 	}
 
-	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", "large-v2", job.Path, job.OutputPath)
+	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", "large-v3", job.Path, job.OutputPath)
 	cmd.Env = append(os.Environ(), "PYTHONUNBUFFERED=1")
 
 	stderr, _ := cmd.StderrPipe()
