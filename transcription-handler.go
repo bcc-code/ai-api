@@ -66,7 +66,7 @@ func (h *handlers) SubmitJob(c *gin.Context) {
 	}
 
 	if job.Model == "" {
-		job.Model = "large-v3"
+		job.Model = "openai/whisper-large-v3"
 	}
 
 	if job.Priority >= 500 {
