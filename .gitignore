@@ -2,3 +2,5 @@ tmp
 whisper-api
 env
 build/
+.DS_Store
+.idea
