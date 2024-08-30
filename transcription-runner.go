@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bcc-code/mediabank-bridge/log"
+	"github.com/samber/lo"
 )
 
 func doCallback(job *Job) {
@@ -47,7 +48,23 @@ func runJob(job *Job) {
 		return
 	}
 
-	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", "openai/whisper-large-v3", job.Path, job.OutputPath)
+	model := "openai/whisper-large-v3"
+	if lo.Contains([]string{
+		"openai/whisper-large-v2",
+		"openai/whisper-large-v3",
+		"openai/whisper-large",
+		"openai/whisper-medium",
+		"openai/whisper-small",
+		"openai/whisper-tiny",
+		"NbAiLab/nb-whisper-large",
+		"NbAiLab/nb-whisper-medium",
+		"NbAiLab/nb-whisper-small",
+		"NbAiLab/nb-whisper-tiny",
+	}, job.Model) {
+		model = job.Model
+	}
+
+	cmd := exec.Command("python3", "bcc-whisper/main.py", "-l", job.Language, "-m", model, job.Path, job.OutputPath)
 	cmd.Env = append(os.Environ(), "PYTHONUNBUFFERED=1")
 
 	stderr, _ := cmd.StderrPipe()
