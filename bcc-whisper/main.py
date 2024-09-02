@@ -77,7 +77,7 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
     if current_type == "speech":
         speech_segments.append((current_type, start * LENGTH, end * LENGTH))
 
-    print(res2)
+    print(speech_segments)
 
     ## This works but currently don't know what to do with it, so it is disabled
     #p = Pipeline.from_pretrained( "pyannote/speaker-diarization-3.1", use_auth_token="<REPLACE WITH TOKEN>")
@@ -101,6 +101,8 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
         feature_extractor=processor.feature_extractor,
         torch_dtype=torch_dtype,
         device=device,
+        chunk_length_s=30,
+        batch_size=4,
     )
 
     parts = {
@@ -171,7 +173,7 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
         if segment is not None:
             parts["segments"].append(segment)
 
-    print(parts)
+    print("Writing files to disk")
 
     # Write the results to files in various formats
     out_file = out.rstrip("/") + "/" + os.path.basename(file)
@@ -194,6 +196,8 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
     f = open(out_file + ".txt", "w")
     f.write(to_txt(parts["segments"]))
     f.close()
+
+    print("Completed")
 
 def convert_seconds_to_vtt_timestamp(seconds):
     # Convert seconds to a timedelta object
