@@ -139,12 +139,14 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
 
         segment = None
         word_count = 0
+        segment_id = 0
         for rchunk in result["chunks"]:
             if segment is None:
                 segment = {
                     "text": "",
                     "start": rchunk["timestamp"][0] + r[1],
                     "words": [],
+                    "id": segment_id,
                 }
 
             rchunk["text"] = rchunk["text"].strip()
@@ -165,6 +167,7 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
                 print(segment["text"])
                 segment = None
                 word_count = 0
+                segment_id += 1
 
             # In the first round the language is not set... Yeah, I don't know what the deal is either
             if (parts["language"] == "" or parts["language"] == "auto") and result["chunks"][0]['language'] is not None:
