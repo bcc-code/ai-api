@@ -162,7 +162,7 @@ def transcribe_file(file: str, out: str, language: str, model_id: str):
             word_count+=1
 
             # This controls what we consider one line in the srt file
-            if word_count > 11 or (word_count > 5 and rchunk['text'][-1] in "!?.:"):
+            if  word_count > 8 or (word_count > 4 and rchunk['text'][-1] in "!?.:"):
                 parts["segments"].append(segment)
                 print(segment["text"])
                 segment = None
